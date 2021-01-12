@@ -1,79 +1,96 @@
-import React,{ useState , useEffect} from 'react';
+import React ,{ useState , useEffect} from 'react';
 import './App.css';
 import axios from 'axios';
+import {CanvasJSChart} from 'canvasjs-react-charts'
+import ReactFlagsSelect from 'react-flags-select';
 
 
 const Table = () => {
-    const [title, setTitle] = useState('India');
     const [confirmed, setConfirmed] = useState();
     const [recovered, setRecovered] = useState();
     const [deaths, setDeaths] = useState();
     const [active, setActive] = useState();
-    const [code, setCode] = useState();
-
+    const [options, setOptions] = useState();
+    const [selected, setSelected] = useState("IN");
+    console.log(selected)
 
     useEffect(()=>{
         async function getData(){
-            const res = await axios.get(`https://bz4xi4g3x8.execute-api.us-east-1.amazonaws.com/test/country?name=${title}`);
-            console.log(res.data.stats.confirmed);
-            setConfirmed(res.data.stats.confirmed)
-            setRecovered(res.data.stats.recovered)
-            setDeaths(res.data.stats.deaths)
-            setActive(res.data.stats.critical)
-            setCode(res.data.stats.code)
 
+            axios.get(`https://bz4xi4g3x8.execute-api.us-east-1.amazonaws.com/test/country?name=${selected}`)
+                .then(resp => {
+                    if(resp.data.stats != null && resp.data.stats !== undefined){
+                        setConfirmed(resp.data.stats.confirmed);
+                        setRecovered(resp.data.stats.recovered);
+                        setDeaths(resp.data.stats.deaths);
+                        setActive(resp.data.stats.critical);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                });
+        }
+        function chart() {
+
+                setOptions({
+                    animationEnabled: true,
+                    theme: "dark2",
+                    title: {
+                        text: `Country Code: ${selected}`
+                    },
+                    axisY: {
+                        title:"Covid Live Updates",
+                        scaleBreaks: {
+                            autoCalculate: true,
+                            type: "wavy",
+                            lineColor: "white"
+                        }
+                    },
+                    data: [{
+                        type: "column",
+                        indexLabel: "{y}",
+                        indexLabelFontColor: "white",
+                        dataPoints: [
+                            {"label": "Confirmed", "y": confirmed},
+                            {"label": "Recovered", "y": recovered},
+                            {"label": "Deaths", "y": deaths},
+                            {"label": "Critical","y":active},
+                        ]
+                    }]
+
+                })
         }
 
         getData();
-    });
+        chart();
+    },[selected,confirmed,recovered,deaths,active]);
 
-
-    function handleClick() {
-        var input = document.getElementById('myInput')
-        if (input.value !== null) {
-            var inputValue = input.value;
-            setTitle(inputValue)
-        }
-
-
-    }
 
     return(
         <>
             <div className='container-fluid nav_bg'>
                 <div className='row'>
                     <div className='col-10 mx-auto'>
-                       <div className='seach-Box' >
-                        <input type="text" id="myInput" />
-                        <input
-                            className='btn btn-primary'
-                            type="button"
-                            value="search"
-                            onClick={handleClick}
-                        />
+                       <div className='search-Box mt-4 form-group' >
+                        <h1>Covid19 Stats</h1>
                        </div>
-
-                        <h1>Covid19 Stats Web App</h1>
-
                         <br/>
-                        <img src={`https://www.countryflags.io/IN/flat/64.png`} alt="flag"></img>
+                        <ReactFlagsSelect
+                            selected={selected}
+                            onSelect={code => setSelected(code)}
+                            searchable={true}
+                            searchPlaceholder="Search country"
+                            className="btn btn-light ml-2 mb-1 drop-dawn"
+
+                        />
                         <div>
+                            <CanvasJSChart options = {options}/>
                         </div>
-                        <h2>you choose {title}</h2>
-                        <h2>confirmed {confirmed}</h2>
-                        <h2>Recovered {recovered}</h2>
-                        <h2>Deaths {deaths}</h2>
-                        <h2>Active {active}</h2>
-                        <h2>Code {code}</h2>
                     </div>
                 </div>
             </div>
-
-
-
-
-            <br/>
         </>
     )
 }
+
 export default Table;
